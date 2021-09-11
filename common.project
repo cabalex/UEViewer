@@ -11,7 +11,7 @@ OPTIMIZE   = size
 PDB        = 2				# keep enabled, executable is almost the same, except embedded link to pdb file
 
 !if !defined(OLDCRT)		# allow overriding of OLDCRT in parent project
-OLDCRT     = 0				# set to 0 (or comment the line) to use "native" compiler's CRT
+OLDCRT     = 1				# set to 0 (or comment the line) to use "native" compiler's CRT
 							# Changed 29.05.2021: Oodle static libraries requires more modern CRT which is not available in MSVCRT.dll
 !endif
 

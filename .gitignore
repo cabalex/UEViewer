@@ -44,6 +44,7 @@ Tools/UITest/vs/Release/
 # oodle library
 libs/oodle/include
 libs/oodle/lib
+libs/MSVCRT
 
 # oodle dll
 libs/oo2core*.dll

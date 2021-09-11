@@ -1,6 +1,6 @@
 #ifndef __UNMATERIAL_H__
 #define __UNMATERIAL_H__
-
+// i fucking hate my compiler
 
 /*-----------------------------------------------------------------------------
 	Internal base material class
@@ -177,8 +177,71 @@ struct CMipMap
 	{
 		// Release old data if any
 		ReleaseData();
-		CompressedData = Bulk.BulkData;
+		CompressedData =  Bulk.BulkData; // compressed data is loaded here
 		DataSize = Bulk.ElementCount * Bulk.GetElementSize();
+		if (Bulk.GetElementSize() == 1) {
+			// NMH3 compression
+			appPrintf("Attempting decompression... ");
+			int blocksize = 4096;//256 * 16;
+			switch (Bulk.ElementCount) {
+				case 0x240000:
+				// 2048p
+				case 0x90000:
+				// 1024p
+				case 0x40000:
+				// 512p
+				// block size can be reused!
+					appPrintf("Detected 512x512 or greater image! Block size is %d\n", blocksize);
+					break;
+				case 0xB000:
+				// 256p
+				case 0x3000:
+				// 128p
+				case 0xC00:
+				// 32p
+					blocksize = -1;
+					appPrintf("Detected 256x256 image! Giving up and dumping it (probably ugly).\n");
+					VSize = VSize * (USize+4)/24*2;
+					USize = 26;//x
+					//blocksize = 80 * 16;
+					break;
+				case 0x400:
+				case 0x200:
+				// 16p and below don't really matter since they only use one strip
+					appPrintf("Detected 16x16 or lower image! No stripping needed :)");
+					break;
+
+			}
+			int i = 0;
+			int newCursor = 0;
+			byte *byArr = new byte[DataSize];
+			if (blocksize != -1) {
+				while (i < Bulk.ElementCount) {
+					int x = 0;
+					while (x < blocksize) {
+						if (*(Bulk.BulkData + i + x) != 0) {
+							break;
+						}
+						x++;
+					}
+					if (x != blocksize) {
+						x = 0;
+						while (x < blocksize) {
+							byArr[newCursor] = *(Bulk.BulkData + i + x);
+							newCursor++;
+							x++;
+						}
+					}
+					i += blocksize;
+				}
+				while (newCursor < DataSize) {
+					byArr[newCursor] = 0;
+					newCursor++;
+				}
+				CompressedData = byArr;
+			}
+			// if -1, just give up lol
+		}
 		if (!GExportInProgress)
 		{
 			// Bulk owns data buffer

@@ -96,7 +96,6 @@ unsigned CTextureData::GetFourCC() const
 	return PixelFormatInfo[Format].FourCC;
 }
 
-
 byte* CTextureData::Decompress(int MipLevel, int Slice)
 {
 	guard(CTextureData::Decompress);
@@ -344,13 +343,13 @@ byte* CTextureData::Decompress(int MipLevel, int Slice)
 			}
 			int blockDim = PixelFormatInfo[Format].BlockSizeX;
 			assert(PixelFormatInfo[Format].BlockSizeY == blockDim);
-			int xBlocks = (USize + blockDim - 1) / blockDim;
-			int yBlocks = (VSize + blockDim - 1) / blockDim;
+			// (image size + 1 block -1px) divided by blocks
+			int xBlocks = USize / blockDim; // -1 to fix rounding error
+			int yBlocks = VSize / blockDim;
 			const int xdim = blockDim, ydim = blockDim, zdim = 1, z = 0;
 			const astc_decode_mode decode_mode = DECODE_LDR;
 			static const swizzlepattern swz_decode = { 0, 1, 2, 3 };
 			imageblock pb;
-
 			astc_codec_image* img = allocate_image(8 /*bitness*/, USize, VSize, 1 /*zsize*/, 0);
 			initialize_image(img);
 

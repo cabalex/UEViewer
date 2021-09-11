@@ -216,6 +216,12 @@ Oodle
 
 Changes
 ~~~~~~~
+
+11.09.2021
+- Support for NMH3 2048x2048, 1024x1024, 512x512 (256x256 and lower not supported yet)
+- [Temporarily limited to biggest mipmap]
+-- FORK https://www.github.com/cabalex/UEViewer --
+
 05.09.2021
 - UE4.27 support
 

@@ -106,6 +106,7 @@
 #define GUNLEGEND		1		// Gunslayer Legend
 #define SPECIALFORCE2	1		// Special Force 2
 #define TAO_YUAN		1
+#define NMH3            1
 #define TRIBES4			1		// Tribes: Ascend
 #define DISHONORED		1
 #define FABLE			1		// Fable: The Journey, Fable Anniversary
