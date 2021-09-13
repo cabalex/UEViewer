@@ -173,13 +173,13 @@ struct CMipMap
 		ShouldFreeData = true;
 	}
 #if UNREAL3
-	void SetBulkData(const FByteBulkData& Bulk)
+	void SetBulkData(const FByteBulkData& Bulk, const ETexturePixelFormat Format)
 	{
 		// Release old data if any
 		ReleaseData();
 		CompressedData =  Bulk.BulkData; // compressed data is loaded here
 		DataSize = Bulk.ElementCount * Bulk.GetElementSize();
-		if (Bulk.GetElementSize() == 1) {
+		if (Bulk.GetElementSize() == 1 && Format == TPF_ASTC_6x6) {
 			// NMH3 compression
 			appPrintf("Attempting decompression... ");
 			int blocksize = 4096;//256 * 16;
@@ -195,20 +195,26 @@ struct CMipMap
 					break;
 				case 0xB000:
 				// 256p
+					blocksize = -1;
+					appPrintf("Detected 256x256 image! Giving up and dumping it (probably ugly).\n");
+					VSize = VSize * (USize+4)/24;
+					USize = 26;//x
+					//blocksize = 80 * 16;
+					break;
 				case 0x3000:
 				// 128p
+				case 0x4800:
+				// 64p
 				case 0xC00:
 				// 32p
 					blocksize = -1;
-					appPrintf("Detected 256x256 image! Giving up and dumping it (probably ugly).\n");
-					VSize = VSize * (USize+4)/24*2;
-					USize = 26;//x
-					//blocksize = 80 * 16;
+					appPrintf("128x128 or lower image detected. Coming soon.\n");
 					break;
 				case 0x400:
 				case 0x200:
 				// 16p and below don't really matter since they only use one strip
-					appPrintf("Detected 16x16 or lower image! No stripping needed :)");
+					appPrintf("Detected 16x16 or lower image! No stripping needed :)\n");
+					blocksize = -1;
 					break;
 
 			}
@@ -239,7 +245,9 @@ struct CMipMap
 					newCursor++;
 				}
 				CompressedData = byArr;
+				// release the previous data
 			}
+			//appFree(Bulk.BulkData);
 			// if -1, just give up lol
 		}
 		if (!GExportInProgress)

@@ -1035,7 +1035,7 @@ bool UTexture2D::GetTextureData(CTextureData &TexData) const
 			// (perhaps minimal size of DXT block). So compute mip size by ourselves.
 			DstMip->USize = max(1, OrigUSize >> mipLevel);
 			DstMip->VSize = max(1, OrigVSize >> mipLevel);
-			DstMip->SetBulkData(Bulk);
+			DstMip->SetBulkData(Bulk, TexData.Format);
 			printf("+%d: %d x %d (%X)\n", mipLevel, DstMip->USize, DstMip->VSize, DstMip->DataSize);
 			TexData.Platform = Package->Platform;
 			// DEBUG
@@ -1048,7 +1048,7 @@ bool UTexture2D::GetTextureData(CTextureData &TexData) const
 	{
 		// The texture is encoded only in SourceArt format (probably this is only UE4, not UE3 case)
 		CMipMap* DstMip = new (TexData.Mips) CMipMap;
-		DstMip->SetBulkData(SourceArt);
+		DstMip->SetBulkData(SourceArt, TexData.Format);
 		DstMip->USize = Source.SizeX;
 		DstMip->VSize = Source.SizeY;
 		TexData.Platform = Package->Platform;
