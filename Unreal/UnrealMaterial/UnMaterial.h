@@ -183,6 +183,7 @@ struct CMipMap
 			// NMH3 compression
 			appPrintf("Attempting decompression... ");
 			int blocksize = 4096;//256 * 16;
+			int skipEnd = 0;
 			switch (Bulk.ElementCount) {
 				case 0x240000:
 				// 2048p
@@ -191,40 +192,44 @@ struct CMipMap
 				case 0x40000:
 				// 512p
 				// block size can be reused!
-					appPrintf("Detected 512x512 or greater image! Block size is %d\n", blocksize);
 					break;
 				case 0xB000:
 				// 256p
-					blocksize = -1;
-					appPrintf("Detected 256x256 image! Giving up and dumping it (probably ugly).\n");
-					VSize = VSize * (USize+4)/24;
-					USize = 26;//x
-					//blocksize = 80 * 16;
+					skipEnd = 2048;
 					break;
 				case 0x3000:
 				// 128p
+					blocksize = 2048;
+					skipEnd = 1024;
+					break;
 				case 0x4800:
 				// 64p
+					blocksize = 1024;
+					skipEnd = 512;
+					break;
 				case 0xC00:
 				// 32p
-					blocksize = -1;
-					appPrintf("128x128 or lower image detected. Coming soon.\n");
+					blocksize = 512;
+					skipEnd = 256;
 					break;
 				case 0x400:
 				case 0x200:
 				// 16p and below don't really matter since they only use one strip
-					appPrintf("Detected 16x16 or lower image! No stripping needed :)\n");
+					//appPrintf("Detected 16x16 or lower image! No stripping needed :)\n");
 					blocksize = -1;
 					break;
-
 			}
 			int i = 0;
 			int newCursor = 0;
 			byte *byArr = new byte[DataSize];
+			//int blockCount = DataSize/blocksize;
+			// skipEnd
+			TArray<byte> tmpArray;
 			if (blocksize != -1) {
 				while (i < Bulk.ElementCount) {
+					// fix 256x256?
 					int x = 0;
-					while (x < blocksize) {
+					while (x < blocksize - skipEnd ) {
 						if (*(Bulk.BulkData + i + x) != 0) {
 							break;
 						}
@@ -232,13 +237,26 @@ struct CMipMap
 					}
 					if (x != blocksize) {
 						x = 0;
-						while (x < blocksize) {
+						while (x < blocksize - skipEnd ) {
 							byArr[newCursor] = *(Bulk.BulkData + i + x);
 							newCursor++;
 							x++;
 						}
+						// will not run if skipEnd is 0
+						while (x < blocksize && skipEnd > 0) {
+							tmpArray.Add(*(Bulk.BulkData + i + x));
+							x++;
+						}
 					}
 					i += blocksize;
+				}
+				if (skipEnd > 0) {
+					int x = 0;
+					while (x < tmpArray.Num()) {
+						byArr[newCursor] = tmpArray[x];
+						x++;
+						newCursor++;
+					}
 				}
 				while (newCursor < DataSize) {
 					byArr[newCursor] = 0;
