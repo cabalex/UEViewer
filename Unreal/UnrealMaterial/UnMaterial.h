@@ -188,6 +188,8 @@ struct CMipMap
 				case 0x240000:
 				// 2048p
 				case 0x90000:
+					blocksize = -1;
+					break;
 				// 1024p
 				case 0x40000:
 				// 512p
@@ -195,22 +197,23 @@ struct CMipMap
 					break;
 				case 0xB000:
 				// 256p
-					skipEnd = 2048;
+					blocksize = -1;
+					//skipEnd = 2048;
 					break;
 				case 0x3000:
 				// 128p
 					blocksize = 2048;
-					skipEnd = 1024;
+					//skipEnd = 1024;
 					break;
 				case 0x4800:
 				// 64p
 					blocksize = 1024;
-					skipEnd = 512;
+					//skipEnd = 512;
 					break;
 				case 0xC00:
-				// 32p
-					blocksize = 512;
-					skipEnd = 256;
+				// 32p / 64p???
+					blocksize = 1024;
+					skipEnd = 512;
 					break;
 				case 0x400:
 				case 0x200:
@@ -218,6 +221,9 @@ struct CMipMap
 					//appPrintf("Detected 16x16 or lower image! No stripping needed :)\n");
 					blocksize = -1;
 					break;
+				default:
+					// unknown or invalid size
+					blocksize = -1;
 			}
 			int i = 0;
 			int newCursor = 0;

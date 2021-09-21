@@ -344,8 +344,8 @@ byte* CTextureData::Decompress(int MipLevel, int Slice)
 			int blockDim = PixelFormatInfo[Format].BlockSizeX;
 			assert(PixelFormatInfo[Format].BlockSizeY == blockDim);
 			// (image size + 1 block -1px) divided by blocks
-			int xBlocks = USize / blockDim; // -1 to fix rounding error
-			int yBlocks = VSize / blockDim;
+			int xBlocks = (USize + blockDim - 1) / blockDim; // -1 to fix rounding error
+			int yBlocks = (VSize + blockDim - 1) / blockDim;
 			const int xdim = blockDim, ydim = blockDim, zdim = 1, z = 0;
 			const astc_decode_mode decode_mode = DECODE_LDR;
 			static const swizzlepattern swz_decode = { 0, 1, 2, 3 };
@@ -855,32 +855,62 @@ bool CTextureData::DecodePS4(int MipLevel)
 //   "bytes_per_gob_y" computation - reference code just works with value 8, we have different ones.
 
 // Note: 'dataSize' param is used only for verification
-static bool UntileCompressedNSWTexture(const byte *src, int dataSize, byte *dst, int width, int height, int blockSizeX, int blockSizeY, int bytesPerBlock)
+static bool UntileCompressedNSWTexture(const byte *src, int dataSize, byte *dst, int width, int height, int blockSizeX, int blockSizeY, int bytesPerBlock, const ETexturePixelFormat Format)
 {
 	guard(UntileCompressedNSWTexture);
 
-	int blockWidth = width / blockSizeX;			// width of image in blocks
-	int blockHeight = height / blockSizeY;			// height of image in blocks
+	 //int blockWidth = width / blockSizeX;          // width of image in blocks
+    //int blockHeight = height / blockSizeY;            // height of image in blocks
 
-	// Term "GOB" means "group of bytes". bytes_per_gob_y affects only gobOffset value.
-	int gobs_per_block_x = (blockWidth * bytesPerBlock + 63) / 64;
-	int bytes_per_gob_x = 64;
-	int bytes_per_gob_y = 8;
+	int blockWidth, blockHeight, gobs_per_block_x, bytes_per_gob_x, bytes_per_gob_y, gob_bytes;
+    if (Format != TPF_ASTC_6x6) {
+		blockWidth = width / blockSizeX;			// width of image in blocks
+		blockHeight = height / blockSizeY;			// height of image in blocks
+		gobs_per_block_x = (blockWidth * bytesPerBlock + 63) / 64;
+		bytes_per_gob_x = 64;
+		bytes_per_gob_y = 8;
+		if (blockSizeX == 1 && blockSizeY == 1)
+		{
+			// Uncompressed tiled texture
+			bytes_per_gob_y = 16;
+			if (blockHeight < 128) bytes_per_gob_y = 8;
+			//?? didn't find when to switch to value 8 (but it seems code works well anyway)
+		}
+		gob_bytes = bytes_per_gob_x * bytes_per_gob_y; // usually has value 512
+		if (blockHeight < 64) bytes_per_gob_y = 4;
+		if (blockHeight < 32) bytes_per_gob_y = 2;
+		if (blockHeight < 16) bytes_per_gob_y = 1;
+	} else {
+		blockWidth = (width + max(blockSizeX - 1, 1)) / max(blockSizeX, 1);           // width of image in blocks
+		blockHeight = (height + max(blockSizeY - 1, 1)) / max(blockSizeY - 1, 1);   // height of image in blocks
 
-	if (blockSizeX == 1 && blockSizeY == 1)
-	{
-		// Uncompressed tiled texture
-		bytes_per_gob_y = 16;
-		if (blockHeight < 128) bytes_per_gob_y = 8;
-		//?? didn't find when to switch to value 8 (but it seems code works well anyway)
+		// Term "GOB" means "group of bytes". bytes_per_gob_y affects only gobOffset value.
+		gobs_per_block_x = (blockWidth * bytesPerBlock + 63) / 64;
+		bytes_per_gob_x = 64;
+
+		int multi = max(height / width, 1);
+		bytes_per_gob_y = 8 * multi;
+
+		/*if (blockSizeX == 1 && blockSizeY == 1)
+		{
+			// Uncompressed tiled texture
+			bytes_per_gob_y = 16;
+			if (blockHeight < 128) bytes_per_gob_y = 8;
+			//?? didn't find when to switch to value 8 (but it seems code works well anyway)
+		}*/
+
+		gob_bytes = bytes_per_gob_x * bytes_per_gob_y; // usually has value 512
+
+		// Smaller textures has different memory layout
+		/*if (blockHeight < 64) bytes_per_gob_y = 4;
+		if (blockHeight < 32) bytes_per_gob_y = 2;
+		if (blockHeight < 16) bytes_per_gob_y = 1;*/
+
+		// Smaller textures has different memory layout
+		if (blockHeight < 48) bytes_per_gob_y = 4;
+		if (blockHeight < 24) bytes_per_gob_y = 2;
+		if (blockHeight < 16) bytes_per_gob_y = 1;
 	}
-
-	int gob_bytes = bytes_per_gob_x * bytes_per_gob_y; // usually has value 512
-
-	// Smaller textures has different memory layout
-	if (blockHeight < 64) bytes_per_gob_y = 4;
-	if (blockHeight < 32) bytes_per_gob_y = 2;
-	if (blockHeight < 16) bytes_per_gob_y = 1;
 
 //	appPrintf("mip: %d x %d (%d/%d x %d/%d) data: comp: %X, real: %X\n",
 //		blockWidth, blockHeight, width, blockSizeX, height, blockSizeY,
@@ -1004,7 +1034,7 @@ bool CTextureData::DecodeNSW(int MipLevel)
 
 	// untile (unswizzle)
 	byte *buf = (byte*)appMalloc(Mip.DataSize);
-	if (!UntileCompressedNSWTexture(Mip.CompressedData, Mip.DataSize, buf, Mip.USize, Mip.VSize, Info.BlockSizeX, Info.BlockSizeY, Info.BytesPerBlock))
+	if (!UntileCompressedNSWTexture(Mip.CompressedData, Mip.DataSize, buf, Mip.USize, Mip.VSize, Info.BlockSizeX, Info.BlockSizeY, Info.BytesPerBlock, Format))
 	{
 		appFree(buf);
 #if DEBUG_PLATFORM_TEX
