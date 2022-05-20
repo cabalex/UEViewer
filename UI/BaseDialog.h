@@ -1,5 +1,5 @@
 // Simple UI library.
-// Copyright (C) 2021 Konstantin Nosov
+// Copyright (C) 2022 Konstantin Nosov
 // Licensed under the BSD license. See LICENSE.txt file in the project root for full license information.
 
 #ifndef __BASE_DIALOG_H__
@@ -220,7 +220,7 @@ protected:
 //	Expose(var)			save pointer to control in variable
 //	SetParent(parent)	attach control to parent
 
-// Some functions exists in UIElement but overriden here to be able to chain them
+// Some functions exists in UIElement but overridden here to be able to chain them
 // without falling back to UIElement class: UIElement's functions can't return
 // 'this' of derived type, so we're redeclaring functions here.
 

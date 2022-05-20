@@ -1302,7 +1302,7 @@ fn ImportPskFile filename skelOnly:false =
 
 	update newMesh
 
-	-- smooth vertex normals accross UV seams
+	-- smooth vertex normals across UV seams
 	max modify mode
 	select newMesh
 
@@ -2064,7 +2064,7 @@ rollout axInfoRollout "ActorX Importer"
 (
 	-- copyright label
 	label     Lbl1 "Version 1.38"
-	label     Lbl2 "\xA9 2009-2021 Konstantin Nosov (Gildor)"
+	label     Lbl2 "\xA9 2009-2022 Konstantin Nosov (Gildor)"
 	hyperlink Lbl3 "http://www.gildor.org/" \
 					address:"http://www.gildor.org/projects/unactorx" align:#center \
 					color:black hovercolor:blue visitedcolor:black

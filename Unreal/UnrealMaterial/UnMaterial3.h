@@ -1225,7 +1225,7 @@ public:
 #endif
 		PROP_DROP(PhysMaterial)
 		PROP_DROP(bHasStaticPermutationResource)
-		PROP_DROP(ReferencedTextures)		// this is a textures from Parent plus own overriden textures
+		PROP_DROP(ReferencedTextures)		// this is a textures from Parent plus own overridden textures
 		PROP_DROP(ReferencedTextureGuids)
 		PROP_DROP(ParentLightingGuid)
 		// physics
@@ -1332,6 +1332,7 @@ public:
 
 #define REGISTER_MATERIAL_CLASSES_U4	\
 	REGISTER_CLASS_ALIAS(UTextureCube4, UTextureCube) \
+	REGISTER_CLASS_ALIAS(UMaterialInstanceConstant, UMaterialInstanceDynamic) \
 	REGISTER_CLASS(FMaterialParameterInfo) \
 	REGISTER_CLASS(FMaterialCachedParameterEntry) \
 	REGISTER_CLASS(FMaterialCachedParameters) \
